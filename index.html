@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Logika Kelistrikan Sepeda Motor (7 Kelompok)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+        }
+        h1 {
+            color: #0f172a;
+            margin-bottom: 4px;
+            font-size: 22px;
+        }
+        p {
+            color: #475569;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .controls {
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            max-width: 820px;
+        }
+        button {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #0369a1;
+        }
+        button.active {
+            background-color: #0f172a;
+            box-shadow: 0 0 0 2px #38bdf8;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .info-panel {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            width: 800px;
+            box-sizing: border-box;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .info-panel code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0284c7;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simulasi Logika Kelistrikan Sepeda Motor</h1>
+    <p>Klik pada sakelar di canvas untuk mengubah status Input (0 / 1)</p>
+
+    <div class="controls">
+        <button id="btn1" class="active" onclick="setMode(1)">Kel 1: AND (Starter Bebek)</button>
+        <button id="btn2" onclick="setMode(2)">Kel 2: OR (Lampu Rem)</button>
+        <button id="btn3" onclick="setMode(3)">Kel 3: NOT (Standar Samping)</button>
+        <button id="btn4" onclick="setMode(4)">Kel 4: XOR (Lampu Sen)</button>
+        <button id="btn5" onclick="setMode(5)">Kel 5: 3-AND (Starter Matik)</button>
+        <button id="btn6" onclick="setMode(6)">Kel 6: NAND (Alarm Security)</button>
+        <button id="btn7" onclick="setMode(7)">Kel 7: NOR (Headlamp AHO)</button>
+    </div>
+
+    <canvas id="simCanvas" width="800" height="360"></canvas>
+
+    <div class="info-panel" id="infoPanel">
+        <!-- Informasi akan diperbarui otomatis oleh JavaScript -->
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentGroup = 1;
+        let switchA = false;
+        let switchB = false;
+        let switchC = false;
+
+        // Koordinat Sakelar untuk Interaksi Klik
+        let rectA = { x: 0, y: 0, w: 60, h: 40 };
+        let rectB = { x: 0, y: 0, w: 60, h: 40 };
+        let rectC = { x: 0, y: 0, w: 60, h: 40 };
+
+        function setMode(groupNum) {
+            currentGroup = groupNum;
+            switchA = false;
+            switchB = false;
+            switchC = false;
+
+            // Atur tombol aktif
+            for (let i = 1; i <= 7; i++) {
+                document.getElementById('btn' + i).classList.toggle('active', i === groupNum);
+            }
+
+            // Khusus Kelompok 5 (Starter Matik): Sakelar A (Kunci) default ON agar realistis
+            if (currentGroup === 5) {
+                switchA = true;
+            }
+
+            draw();
+        }
+
+        canvas.addEventListener('click', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Cek klik Sakelar A
+            if (mouseX >= rectA.x && mouseX <= rectA.x + 60 && mouseY >= rectA.y - 20 && mouseY <= rectA.y + 20) {
+                switchA = !switchA;
+            }
+            // Cek klik Sakelar B
+            if (currentGroup !== 3 && mouseX >= rectB.x && mouseX <= rectB.x + 60 && mouseY >= rectB.y - 20 && mouseY <= rectB.y + 20) {
+                switchB = !switchB;
+            }
+            // Cek klik Sakelar C (Khusus Kelompok 5)
+            if (currentGroup === 5 && mouseX >= rectC.x && mouseX <= rectC.x + 60 && mouseY >= rectC.y - 20 && mouseY <= rectC.y + 20) {
+                switchC = !switchC;
+            }
+
+            draw();
+        });
+
+        function calculateOutput() {
+            switch(currentGroup) {
+                case 1: return switchA && switchB; // AND
+                case 2: return switchA || switchB; // OR
+                case 3: return !switchA; // NOT
+                case 4: return (switchA && !switchB) || (!switchA && switchB); // XOR
+                case 5: return switchA && switchB && switchC; // 3-Input AND
+                case 6: return !(switchA && switchB); // NAND
+                case 7: return !(switchA || switchB); // NOR
+                default: return false;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const output = calculateOutput();
+
+            drawBattery(80, 180);
+            drawOutputDevice(700, 180, output);
+
+            ctx.lineWidth = 3;
+
+            // Rangkaian khusus sesuai kelompok
+            if (currentGroup === 1) { // AND (Seri)
+                rectA = { x: 230, y: 180 }; rectB = { x: 450, y: 180 };
+                drawWire(80, 145, 230, 180, true);
+                drawWire(290, 180, 450, 180, switchA);
+                drawWire(510, 180, 700, 155, output);
+                drawSwitch(230, 180, switchA, "Kunci Kontak (A)");
+                drawSwitch(450, 180, switchB, "Tombol Starter (B)");
+            }
+            else if (currentGroup === 2) { // OR (Paralel)
+                rectA = { x: 330, y: 110 }; rectB = { x: 330, y: 250 };
+                drawWire(80, 145, 260, 145, true);
+                drawWire(260, 145, 330, 110, true);
+                drawWire(260, 145, 330, 250, true);
+                drawWire(390, 110, 470, 180, switchA);
+                drawWire(390, 250, 470, 180, switchB);
+                drawWire(470, 180, 700, 155, output);
+                drawSwitch(330, 110, switchA, "Rem Depan (A)");
+                drawSwitch(330, 250, switchB, "Rem Belakang (B)");
+            }
+            else if (currentGroup === 3) { // NOT (Inverter)
+                rectA = { x: 330, y: 180 };
+                drawWire(80, 145, 330, 180, true);
+                drawWire(390, 180, 700, 155, output);
+                drawGateBox(470, 180, "NOT (Inverter)");
+                drawSwitch(330, 180, switchA, "Standar Samping (A)");
+            }
+            else if (currentGroup === 4) { // XOR (Lampu Sen)
+                rectA = { x: 250, y: 120 }; rectB = { x: 250, y: 240 };
+                drawWire(80, 145, 200, 145, true);
+                drawWire(200, 145, 250, 120, true);
+                drawWire(200, 145, 250, 240, true);
+                drawWire(310, 120, 420, 180, switchA);
+                drawWire(310, 240, 420, 180, switchB);
+                drawGateBox(460, 180, "XOR Logic");
+                drawWire(500, 180, 700, 155, output);
+                drawSwitch(250, 120, switchA, "Sen Kiri (A)");
+                drawSwitch(250, 240, switchB, "Sen Kanan (B)");
+            }
+            else if (currentGroup === 5) { // 3-Input AND
+                rectA = { x: 200, y: 180 }; rectB = { x: 360, y: 180 }; rectC = { x: 520, y: 180 };
+                drawWire(80, 145, 200, 180, true);
+                drawWire(260, 180, 360, 180, switchA);
+                drawWire(420, 180, 520, 180, switchA && switchB);
+                drawWire(580, 180, 700, 155, output);
+                drawSwitch(200, 180, switchA, "Kunci (A)");
+                drawSwitch(360, 180, switchB, "Rem (B)");
+                drawSwitch(520, 180, switchC, "Starter (C)");
+            }
+            else if (currentGroup === 6) { // NAND (Alarm)
+                rectA = { x: 250, y: 120 }; rectB = { x: 250, y: 240 };
+                drawWire(80, 145, 200, 145, true);
+                drawWire(200, 145, 250, 120, true);
+                drawWire(200, 145, 250, 240, true);
+                drawWire(310, 120, 420, 180, switchA);
+                drawWire(310, 240, 420, 180, switchB);
+                drawGateBox(460, 180, "NAND Logic");
+                drawWire(500, 180, 700, 155, output);
+                drawSwitch(250, 120, switchA, "Alarm Aktif (A)");
+                drawSwitch(250, 240, switchB, "Sensor Getar (B)");
+            }
+            else if (currentGroup === 7) { // NOR (Headlamp AHO)
+                rectA = { x: 250, y: 120 }; rectB = { x: 250, y: 240 };
+                drawWire(80, 145, 200, 145, true);
+                drawWire(200, 145, 250, 120, true);
+                drawWire(200, 145, 250, 240, true);
+                drawWire(310, 120, 420, 180, switchA);
+                drawWire(310, 240, 420, 180, switchB);
+                drawGateBox(460, 180, "NOR Logic");
+                drawWire(500, 180, 700, 155, output);
+                drawSwitch(250, 120, switchA, "Manual OFF (A)");
+                drawSwitch(250, 240, switchB, "Mesin Mati (B)");
+            }
+
+            // Wayar Ground Negatif (-)
+            drawWire(700, 215, 80, 215, false, true);
+
+            updateInfoPanel(output);
+        }
+
+        function drawWire(x1, y1, x2, y2, isHot, isGround = false) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            if (isGround) {
+                ctx.strokeStyle = '#1e293b'; // Warna Hitam untuk Ground
+            } else {
+                ctx.strokeStyle = isHot ? '#ef4444' : '#94a3b8'; // Merah = Berarus, Kelabu = OFF
+            }
+            ctx.stroke();
+        }
+
+        function drawSwitch(x, y, isOn, label) {
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#0f172a';
+
+            // Titik Sambungan
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.arc(x + 60, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+
+            // Bilah Sakelar
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            if (isOn) {
+                ctx.lineTo(x + 60, y); // Tertutup (1)
+            } else {
+                ctx.lineTo(x + 55, y - 22); // Terbuka (0)
+            }
+            ctx.strokeStyle = isOn ? '#22c55e' : '#ef4444';
+            ctx.stroke();
+
+            // Teks Label
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(`${label}: ${isOn ? '1 (ON)' : '0 (OFF)'}`, x - 5, y - 28);
+        }
+
+        function drawGateBox(x, y, text) {
+            ctx.fillStyle = '#e2e8f0';
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 2;
+            ctx.fillRect(x - 30, y - 20, 60, 40);
+            ctx.strokeRect(x - 30, y - 20, 60, 40);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y + 4);
+            ctx.textAlign = 'left';
+        }
+
+        function drawBattery(x, y) {
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(x - 20, y - 35, 40, 70);
+            ctx.fillStyle = '#ef4444'; ctx.fillText('+', x - 14, y - 15);
+            ctx.fillStyle = '#ffffff'; ctx.fillText('-', x - 14, y + 25);
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('Aki 12V', x - 20, y + 52);
+        }
+
+        function drawOutputDevice(x, y, isOn) {
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(x - 12, y + 20, 24, 15);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            if (isOn) {
+                ctx.fillStyle = '#facc15'; // Kuning Terang (Output Active)
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 25;
+            } else {
+                ctx.fillStyle = '#cbd5e1'; // Kelabu (Output Inactive)
+                ctx.shadowBlur = 0;
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Label Output
+            let label = (currentGroup === 1 || currentGroup === 5) ? "DINAMO STARTER" :
+                        (currentGroup === 3 || currentGroup === 6) ? "SISTEM PENGAPIAN" : "LAMPU OUTPUT";
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(label, x - 40, y + 52);
+            ctx.fillStyle = isOn ? '#16a34a' : '#dc2626';
+            ctx.fillText(isOn ? 'STATUS: 1 (AKTIF)' : 'STATUS: 0 (MATI)', x - 40, y + 66);
+        }
+
+        function updateInfoPanel(output) {
+            const valA = switchA ? 1 : 0;
+            const valB = switchB ? 1 : 0;
+            const valC = switchC ? 1 : 0;
+            const valOut = output ? 1 : 0;
+
+            const descriptions = [
+                "",
+                `<strong>Kelompok 1: Gerbang Logika AND (Rangkaian Seri)</strong><br>Analogi TSM: Starter Elektrik Motor Bebek<br>Persamaan Logika: <code>${valA} AND ${valB} = ${valOut}</code>`,
+                `<strong>Kelompok 2: Gerbang Logika OR (Rangkaian Paralel)</strong><br>Analogi TSM: Lampu Rem Belakang<br>Persamaan Logika: <code>${valA} OR ${valB} = ${valOut}</code>`,
+                `<strong>Kelompok 3: Gerbang Logika NOT (Inverter)</strong><br>Analogi TSM: Side Stand Switch (Pengaman Standar Samping)<br>Persamaan Logika: <code>NOT ${valA} = ${valOut}</code>`,
+                `<strong>Kelompok 4: Gerbang Logika XOR (Exclusive OR)</strong><br>Analogi TSM: Sakelar Lampu Sen Kiri / Kanan<br>Persamaan Logika: <code>${valA} XOR ${valB} = ${valOut}</code>`,
+                `<strong>Kelompok 5: Kombinasi 3 Input (AND)</strong><br>Analogi TSM: Fitur Safety Starter Motor Matik<br>Persamaan Logika: <code>${valA} AND ${valB} AND ${valC} = ${valOut}</code>`,
+                `<strong>Kelompok 6: Gerbang Logika NAND (NOT AND)</strong><br>Analogi TSM: Modul Alarm Keamanan Motor<br>Persamaan Logika: <code>NOT (${valA} AND ${valB}) = ${valOut}</code>`,
+                `<strong>Kelompok 7: Gerbang Logika NOR (NOT OR)</strong><br>Analogi TSM: Headlamp Otomatis / AHO (Automatic Headlight On)<br>Persamaan Logika: <code>NOT (${valA} OR ${valB}) = ${valOut}</code>`
+            ];
+
+            document.getElementById('infoPanel').innerHTML = descriptions[currentGroup] + 
+                `<br>Status Output saat ini: <strong style="color:${output ? '#16a34a' : '#dc2626'}">${valOut === 1 ? 'AKTIF / BERARUS (1)' : 'MATI / TERPUTUS (0)'}</strong>`;
+        }
+
+        // Inisialisasi awal
+        setMode(1);
+    </script>
+</body>
+</html>
